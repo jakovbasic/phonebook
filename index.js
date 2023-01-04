@@ -24,6 +24,22 @@ let persons = [
     }
   ]
 
+  const info = (n) => {
+    const date = new Date()
+    console.log(date)
+    return(
+        `<div>
+          <div>Phonebook has info for ${n} people</div>
+          <div>${date.getUTCDate()}.${date.getUTCMonth()+1}.${date.getUTCFullYear()}
+              ${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}</div>
+        </div>`
+    )
+  }
+
+  app.get('/info', (req, res) => {
+    res.send(info(persons.length))
+  })
+
   app.get('/api/persons', (req, res) => {
     res.json(persons)
   })
