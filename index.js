@@ -78,6 +78,11 @@ let persons = [
         error: 'name or number missing' 
       })
     }
+    if (persons.map(p => p.name).includes(body.name)) {
+      return res.status(400).json({ 
+        error: 'name must be unique' 
+      })
+    }
   
     const person = {
       id: generateId(),
