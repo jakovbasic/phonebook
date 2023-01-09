@@ -1,7 +1,9 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 app.use(express.json())
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
@@ -48,28 +50,29 @@ let persons = [
   }
 
   app.get('/info', (req, res) => {
-    res.send(info(persons.length))
+    Person.find({}).then(persons => res.send(info(persons.length)))
   })
 
   app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+      res.json(persons)
+    })
   })
 
   app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(p => p.id === id)
-    if (person) {
-      res.json(person)
-    } else {
-      res.status(404).end()
-    }
+    Person.findById(req.params.id).then(person => {
+      if(person) {
+        res.json(person)
+      }
+      else {
+        res.status(404).end()
+      }
+    })
   })
 
   app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(p => p.id !== id)
-  
-    res.status(204).end()
+    Person.findByIdAndDelete(req.params.id)
+      .then(res.status(204).end())
   })
 
   const generateId = () => {
@@ -93,15 +96,15 @@ let persons = [
       })
     }
   
-    const person = {
+    const person = new Person({
       id: generateId(),
       name: body.name,
       number: body.number
-    }
+    })
   
-    persons = persons.concat(person)
-  
-    res.json(person)
+    person.save().then(savedPerson => {
+      res.json(savedPerson)
+    })
   })
 
   const PORT = process.env.PORT || 3001
