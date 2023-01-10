@@ -29,90 +29,90 @@ morgan.token('body', (req) => {
 
 let persons = []
 
-  const info = (n) => {
-    const date = new Date()
-    console.log(date)
-    return(
-        `<div>
+const info = (n) => {
+  const date = new Date()
+  console.log(date)
+  return(
+    `<div>
           <div>Phonebook has info for ${n} people</div>
           <div>${date.getUTCDate()}.${date.getUTCMonth()+1}.${date.getUTCFullYear()}
               ${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}</div>
         </div>`
-    )
+  )
+}
+
+app.get('/info', (req, res) => {
+  Person.find({}).then(persons => res.send(info(persons.length)))
+})
+
+app.get('/api/persons', (req, res, next) => {
+  Person.find({}).then(persons => {
+    res.json(persons)
+  }).catch(error => next(error))
+})
+
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id).then(person => {
+    if(person) {
+      res.json(person)
+    }
+    else {
+      res.status(404).end()
+    }
+  }).catch(error => next(error))
+})
+
+app.delete('/api/persons/:id', (req, res, next) => {
+  Person.findByIdAndDelete(req.params.id)
+    .then(res.status(204).end())
+    .catch(error => next(error))
+})
+
+const generateId = () => {
+  const maxId = persons.length > 0
+    ? Math.max(...persons.map(p => p.id))
+    : 0
+  return maxId + 1
+}
+
+app.post('/api/persons', (req, res, next) => {
+  const body = req.body
+
+  if (!body.name || !body.number) {
+    return res.status(400).json({
+      error: 'name or number missing'
+    })
+  }
+  if (persons.map(p => p.name).includes(body.name)) {
+    return res.status(400).json({
+      error: 'name must be unique'
+    })
   }
 
-  app.get('/info', (req, res) => {
-    Person.find({}).then(persons => res.send(info(persons.length)))
+  const person = new Person({
+    id: generateId(),
+    name: body.name,
+    number: body.number
   })
 
-  app.get('/api/persons', (req, res, next) => {
-    Person.find({}).then(persons => {
-      res.json(persons)
-    }).catch(error => next(error))
+  person.save().then(savedPerson => {
+    res.json(savedPerson)
   })
+    .catch(error => next(error))
+})
 
-  app.get('/api/persons/:id', (req, res, next) => {
-    Person.findById(req.params.id).then(person => {
-      if(person) {
-        res.json(person)
-      }
-      else {
-        res.status(404).end()
-      }
-    }).catch(error => next(error))
-  })
+app.put('api/persons/:id', (req, res, next) => {
+  const { name, number } = req.body
 
-  app.delete('/api/persons/:id', (req, res, next) => {
-    Person.findByIdAndDelete(req.params.id)
-      .then(res.status(204).end())
-        .catch(error => next(error))
-  })
 
-  const generateId = () => {
-    const maxId = persons.length > 0
-      ? Math.max(...persons.map(p => p.id))
-      : 0
-    return maxId + 1
-  }
-  
-  app.post('/api/persons', (req, res, next) => {
-    const body = req.body
-  
-    if (!body.name || !body.number) {
-      return res.status(400).json({ 
-        error: 'name or number missing' 
-      })
-    }
-    if (persons.map(p => p.name).includes(body.name)) {
-      return res.status(400).json({ 
-        error: 'name must be unique' 
-      })
-    }
-  
-    const person = new Person({
-      id: generateId(),
-      name: body.name,
-      number: body.number
+  Person.findByIdAndUpdate(req.params.id, { name, number }, { new: true, runValidators: true, context: 'query'  })
+    .then(updatedPerson => {
+      res.json(updatedPerson)
     })
-  
-    person.save().then(savedPerson => {
-      res.json(savedPerson)
-    })
-      .catch(error => next(error))
-  })
+    .catch(error => next(error))
+})
 
-  app.put('api/persons/:id', (req, res, next) => {
-    const {name, number} = req.body
-
-  
-    Person.findByIdAndUpdate(req.params.id, {name, number}, { new: true, runValidators: true, context: 'query'  })
-        .then(updatedPerson => {
-        res.json(updatedPerson)
-      })
-        .catch(error => next(error))
-  })
-
-  const PORT = process.env.PORT || 3001
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-  })
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
