@@ -12,6 +12,19 @@ mongoose.connect(url)
     console.log('error connecting to MongoDB:', error.message)
   })
 
+  function numValidator(number) {
+    if(number.includes('-')) {
+      const splits = number.split('-')
+      if(splits.length == 2) {
+        if(splits[0].length == 2 || splits[0].length == 3) {
+          if(splits[1].length > (7-splits[0].length)) {
+            return true
+          }
+        }
+      } 
+    } return false
+  }
+
   const personSchema = new mongoose.Schema({
     name: {
       type: String,
@@ -20,8 +33,8 @@ mongoose.connect(url)
     },
     number: {
       type: String,
-      minlength: 3,
-      required: true
+      minlength: 8,
+      validate: [numValidator, 'Invalid number'],
     }
   })
   
